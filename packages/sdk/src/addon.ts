@@ -12,9 +12,15 @@ export function defineAddon<T = Record<string, string>>(def: AddonDefinition<T>)
       auth:           def.auth,
       behaviorHints:  def.behaviorHints,
     },
-    handlers: def.handlers,
+    // Spread all handlers AND attach them directly on the addon object
+    // so Resonance can find them however it looks (addon.handlers.X or addon.X)
+    handlers: {
+      ...def.handlers,
+      // Mirror top-level for any direct property access pattern
+    },
+    // Also expose handlers at top level
+    ...def.handlers,
   };
-  // Store on globalThis so Resonance can find it regardless of module format
   (globalThis as Record<string, unknown>).__resonance_addon__ = addon;
   return addon;
 }
