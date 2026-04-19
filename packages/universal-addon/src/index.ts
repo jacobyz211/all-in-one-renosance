@@ -168,28 +168,35 @@ export const addon = defineAddon<UniversalConfig>({
     resolveStream:     (cfg, id) => handleStream(cfg, id),
     getCatalog:        async (cfg, id, extra) => {
       const q = extra?.search ?? extra?.q ?? "";
-      if (!q.trim()) {
-        // No search query — return empty metas so home tab loads without error
-        return { metas: [] };
-      }
-      const results = await handleSearch(cfg, q, undefined) as { tracks: any[]; albums: any[]; artists: any[] };
-      const metas = [
+      // Return null when no query — Resonance home tab accepts null for empty catalogs
+      if (!q.trim()) return null;
+      const results = await handleSearch(cfg, q, undefined) as any;
+      // Return a flat array of tracks — Resonance decodes this directly
+      return [
         ...(results.tracks ?? []).map((t: any) => ({
-          id:     t.id,
-          type:   "track",
-          name:   t.title,
-          poster: t.artworkURL ?? null,
-          description: t.artist ?? null,
+          id:          String(t.id),
+          type:        "track" as const,
+          title:       t.title ?? "",
+          name:        t.title ?? "",
+          artist:      t.artist ?? "",
+          album:       t.album ?? "",
+          duration:    t.duration ?? 0,
+          artworkURL:  t.artworkURL ?? null,
+          streamURL:   t.streamURL ?? null,
+          isrc:        t.isrc ?? null,
+          format:      t.format ?? null,
         })),
         ...(results.albums ?? []).map((a: any) => ({
-          id:     a.id,
-          type:   "album",
-          name:   a.title,
-          poster: a.artworkURL ?? null,
-          description: a.artist ?? null,
+          id:          String(a.id),
+          type:        "album" as const,
+          title:       a.title ?? "",
+          name:        a.title ?? "",
+          artist:      a.artist ?? "",
+          artworkURL:  a.artworkURL ?? null,
+          trackCount:  a.trackCount ?? 0,
+          year:        a.year ?? null,
         })),
       ];
-      return { metas };
     },
     getQuickAccess:    (cfg) => Promise.resolve(null),
     getAlbumDetail:    (cfg, id) => handleAlbum(cfg, id),
