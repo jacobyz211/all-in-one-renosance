@@ -1,0 +1,212 @@
+export const TRIDAL_MODULE_CODE = `
+/**
+ * Tridal Module
+ * dedicated module for hifi instances
+ */
+
+const TRACK_URLS = [
+    'https://hifi-one.spotisaver.net',
+    'https://hifi-two.spotisaver.net',
+    'https://frankfurt-1.monochrome.tf',
+    'https://ohio-1.monochrome.tf',
+    'https://singapore-1.monochrome.tf',
+    'https://maus.qqdl.site',
+    'https://vogel.qqdl.site',
+    'https://katze.qqdl.site',
+    'https://hund.qqdl.site'
+];
+
+const SEARCH_URLS = [
+    'https://monochrome-api.samidy.com',
+    ...TRACK_URLS
+];
+
+const QUALITY = {
+    LOW: 'LOW',
+    HIGH: 'HIGH',
+    LOSSLESS: 'LOSSLESS'
+};
+
+const QUALITY_FALLBACKS = {
+    [QUALITY.LOSSLESS]: [QUALITY.HIGH, QUALITY.LOW],
+    [QUALITY.HIGH]: [QUALITY.LOSSLESS, QUALITY.LOW],
+    [QUALITY.LOW]: [QUALITY.HIGH, QUALITY.LOSSLESS]
+};
+
+function fetchJson(endpoint) {
+    let index = 0;
+    function tryNext() {
+        if (index >= SEARCH_URLS.length) {
+            return Promise.reject(new Error('All search endpoints failed'));
+        }
+        
+        const baseUrl = SEARCH_URLS[index];
+        index++;
+        
+        const url = baseUrl + endpoint;
+        return fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'Monochrome/1.0',
+            }
+        })
+        .then(function(response) {
+            if (response.ok) return response.json();
+            throw new Error('HTTP ' + response.status);
+        })
+        .catch(function(err) {
+            console.warn('[Monochrome] Search failed for ' + baseUrl + ':', err);
+            return tryNext();
+        });
+    }
+    
+    return tryNext();
+}
+
+function extractStreamUrl(manifest) {
+    if (!manifest) return null;
+    try {
+        const decoded = atob(manifest);
+        const parsed = JSON.parse(decoded);
+        if (parsed.urls && Array.isArray(parsed.urls) && parsed.urls.length > 0) {
+            return parsed.urls[0];
+        }
+    } catch (error) {
+        console.error('[Monochrome] Failed to decode manifest:', error);
+    }
+    return null;
+}
+
+function getTidalCoverUrl(uuid) {
+    if (!uuid || typeof uuid !== 'string') return null;
+    if (uuid.startsWith('http')) return uuid;
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid)) {
+        return uuid;
+    }
+    const path = uuid.replace(/-/g, '/');
+    return 'https://resources.tidal.com/images/' + path + '/640x640.jpg';
+}
+
+function searchTracks(query, limit) {
+    if (!limit) limit = 25;
+    return fetchJson('/search/?s=' + encodeURIComponent(query) + '&limit=' + limit)
+        .then(function(data) {
+            const items = (data.data && data.data.items) ? data.data.items : [];
+            return {
+                tracks: items.map(function(track) {
+                    return {
+                        id: track.id,
+                        title: track.title,
+                        artist: (track.artist && track.artist.name) || (track.artists && track.artists[0] && track.artists[0].name) || 'Unknown Artist',
+                        artistId: (track.artist && track.artist.id) || (track.artists && track.artists[0] && track.artists[0].id),
+                        album: (track.album && track.album.title) || 'Unknown Album',
+                        albumId: track.album && track.album.id,
+                        albumCover: getTidalCoverUrl(track.album && track.album.cover),
+                        duration: track.duration || 0,
+                        trackNumber: track.trackNumber,
+                        audioQuality: track.audioQuality || 'LOSSLESS',
+                        availableQualities: ['LOSSLESS', 'HIGH', 'LOW']
+                    };
+                }),
+                total: (data.data && data.data.totalNumberOfItems) || items.length,
+            };
+        });
+}
+
+function getTrackStreamUrl(trackId, preferredQuality, context) {
+    const targetQuality = context?.settings?.quality?.value || preferredQuality || QUALITY.LOSSLESS;
+    const fallbackEnabled = context?.settings?.fallbackMode?.value !== 'strict';
+
+    const qualitiesToTry = fallbackEnabled 
+        ? [targetQuality, ...(QUALITY_FALLBACKS[targetQuality] || [])]
+        : [targetQuality];
+
+    function tryQualityChain(qIndex) {
+        if (qIndex >= qualitiesToTry.length) {
+            return Promise.reject(new Error('All quality levels and mirrors failed'));
+        }
+
+        const currentQuality = qualitiesToTry[qIndex];
+        
+        function tryMirrors(mIndex) {
+            if (mIndex >= TRACK_URLS.length) {
+                return Promise.resolve(null);
+            }
+
+            const baseUrl = TRACK_URLS[mIndex];
+            const url = baseUrl + '/track/?id=' + trackId + '&quality=' + currentQuality;
+
+            return fetch(url, {
+                headers: { 'Accept': 'application/json', 'User-Agent': 'Monochrome/1.0' }
+            })
+            .then(res => res.ok ? res.json() : Promise.reject())
+            .then(data => {
+                const streamUrl = extractStreamUrl(data.data?.manifest);
+                if (!streamUrl) throw new Error();
+                return {
+                    streamUrl: streamUrl,
+                    track: {
+                        id: data.data.trackId || trackId,
+                        audioQuality: data.data.audioQuality,
+                        bitDepth: data.data.bitDepth,
+                        sampleRate: data.data.sampleRate,
+                    }
+                };
+            })
+            .catch(() => tryMirrors(mIndex + 1));
+        }
+
+        return tryMirrors(0).then(result => {
+            if (result) return result;
+            console.warn('[Monochrome] Quality ' + currentQuality + ' failed on all mirrors, trying next quality...');
+            return tryQualityChain(qIndex + 1);
+        });
+    }
+
+    return tryQualityChain(0);
+}
+
+function getAlbum(albumId) {
+    return fetchJson('/album/?id=' + albumId).catch(() => {
+        throw new Error('Album fetch not fully implemented');
+    });
+}
+
+return {
+    id: 'tidals-morgk',
+    name: 'Tridal',
+    author: 'Morgk',
+    version: '2.7.22',
+    description: 'music ripped from tidal in lossless quality!',
+    logo: 'https://tidal.com/img/app-icon-192.png',
+    labels: ['High Quality', 'Multi-Source', 'Settings'],
+    
+    settings: {
+        quality: {
+            type: 'selector',
+            label: 'Audio Quality',
+            description: 'Select preferred streaming quality',
+            options: [
+                { label: 'Data Saver', value: QUALITY.LOW },
+                { label: 'High Quality', value: QUALITY.HIGH },
+                { label: 'Lossless', value: QUALITY.LOSSLESS }
+            ],
+            defaultValue: QUALITY.LOSSLESS
+        },
+        fallbackMode: {
+            type: 'selector',
+            label: 'Quality Fallback',
+            description: 'Fallback if preferred quality is unavailable',
+            options: [
+                { label: 'Flexible', value: 'flexible' },
+                { label: 'Strict', value: 'strict' }
+            ],
+            defaultValue: 'flexible'
+        }
+    },
+
+    searchTracks: searchTracks,
+    getTrackStreamUrl: getTrackStreamUrl,
+    getAlbum: getAlbum
+};
+`;
