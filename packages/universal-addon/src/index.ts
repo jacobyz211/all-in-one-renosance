@@ -38,10 +38,11 @@ export const addon = defineAddon<UniversalConfig>({
   },
   behaviorHints: { configurable:true, configurationRequired:true },
   handlers: {
-    search:          (cfg, q) => handleSearch(cfg, q),
-    resolveStream:   (cfg, id) => handleStream(cfg, id),
-    getAlbumDetail:  (cfg, id) => handleAlbum(cfg, id),
-    getArtistDetail: (cfg, id) => handleArtist(cfg, id),
+    search:           (cfg, q) => handleSearch(cfg, q),
+    resolveStream:    (cfg, id) => handleStream(cfg, id),
+    getAlbumDetail:   (cfg, id) => handleAlbum(cfg, id),
+    getArtistDetail:  (cfg, id) => handleArtist(cfg, id),
     getPlaylistDetail:(cfg, id) => handlePlaylist(cfg, id),
+    getCatalog:       (cfg, id, extra) => handleSearch(cfg, (extra as { search?: string })?.search ?? "", undefined),
   },
 });
