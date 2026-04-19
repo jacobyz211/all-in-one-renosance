@@ -134,6 +134,7 @@ export const addon = defineAddon<UniversalConfig>({
   version: "1.4.0",
   icon: { type: "remote", value: "https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/radio.svg" },
   resources: [
+    { type: "search" },
     { type: "stream", idPrefixes: ["com.resonance.universal","hifi_","sc_","ia_","radio_","pi_ep_","taddy_ep_","lvox_ch_"] },
     { type: "catalog", catalogs: [{ id: "search", name: "Search", isDefault: true }] },
   ],
@@ -157,5 +158,6 @@ export const addon = defineAddon<UniversalConfig>({
     getArtistDetail:   (cfg, id) => handleArtist(cfg, id),
     getPlaylistDetail: (cfg, id) => handlePlaylist(cfg, id),
     getCatalog:        (cfg, id, extra) => handleSearch(cfg, (extra as { search?: string })?.search ?? "top", undefined),
+    catalog:           (cfg, id, extra) => handleSearch(cfg, (extra as { search?: string })?.search ?? "top", undefined),
   },
 });
