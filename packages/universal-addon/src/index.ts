@@ -166,7 +166,31 @@ export const addon = defineAddon<UniversalConfig>({
   handlers: {
     search:            (cfg, q) => handleSearch(cfg, q),
     resolveStream:     (cfg, id) => handleStream(cfg, id),
-    getCatalog:        (cfg, id, extra) => handleSearch(cfg, extra?.search ?? extra?.q ?? "top hits", undefined),
+    getCatalog:        async (cfg, id, extra) => {
+      const q = extra?.search ?? extra?.q ?? "";
+      if (!q.trim()) {
+        // No search query — return empty metas so home tab loads without error
+        return { metas: [] };
+      }
+      const results = await handleSearch(cfg, q, undefined) as { tracks: any[]; albums: any[]; artists: any[] };
+      const metas = [
+        ...(results.tracks ?? []).map((t: any) => ({
+          id:     t.id,
+          type:   "track",
+          name:   t.title,
+          poster: t.artworkURL ?? null,
+          description: t.artist ?? null,
+        })),
+        ...(results.albums ?? []).map((a: any) => ({
+          id:     a.id,
+          type:   "album",
+          name:   a.title,
+          poster: a.artworkURL ?? null,
+          description: a.artist ?? null,
+        })),
+      ];
+      return { metas };
+    },
     getQuickAccess:    (cfg) => Promise.resolve(null),
     getAlbumDetail:    (cfg, id) => handleAlbum(cfg, id),
     getArtistDetail:   (cfg, id) => handleArtist(cfg, id),
