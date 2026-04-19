@@ -23,7 +23,6 @@ const addon = defineAddon<UniversalConfig>({
   resources: [
     { type: "stream", idPrefixes: ["com.resonance.universal","hifi_","sc_","ia_","radio_","pi_ep_","taddy_ep_","lvox_ch_"] },
     { type: "catalog", catalogs: [{ id: "search", name: "Search", isDefault: true }] },
-    { type: "search" },
   ],
   auth: {
     type: "token",
@@ -44,7 +43,6 @@ const addon = defineAddon<UniversalConfig>({
     getAlbumDetail:   (cfg, id) => handleAlbum(cfg, id),
     getArtistDetail:  (cfg, id) => handleArtist(cfg, id),
     getPlaylistDetail:(cfg, id) => handlePlaylist(cfg, id),
-    getCatalog:       (cfg, id, extra) => handleSearch(cfg, (extra as { search?: string })?.search ?? "", undefined),
   },
 });
 
