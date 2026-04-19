@@ -19,6 +19,7 @@ export interface AddonHandlers<T> {
   getAlbumDetail?:   (cfg: T, id: string) => Promise<unknown>;
   getArtistDetail?:  (cfg: T, id: string) => Promise<unknown>;
   getPlaylistDetail?:(cfg: T, id: string) => Promise<unknown>;
+  getCatalog?:       (cfg: T, id: string, extra?: unknown) => Promise<unknown>;
 }
 export interface AddonDefinition<T = Record<string, string>> {
   id: string; name: string; description: string; version: string;
