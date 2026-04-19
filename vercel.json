@@ -6,15 +6,17 @@
   "framework": null,
   "headers": [
     {
-      "source": "/(.*)\\.js",
+      "source": "/(.*).js",
       "headers": [
-        { "key": "Content-Type",                "value": "application/javascript" },
+        { "key": "Content-Type", "value": "application/javascript" },
         { "key": "Access-Control-Allow-Origin", "value": "*" }
       ]
     },
     {
       "source": "/(.*)",
-      "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }]
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
     }
   ]
 }
