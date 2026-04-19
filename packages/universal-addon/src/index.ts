@@ -14,7 +14,7 @@ export interface UniversalConfig {
   taddyUid: string;
 }
 
-export const addon = defineAddon<UniversalConfig>({
+const addon = defineAddon<UniversalConfig>({
   id: "com.resonance.universal",
   name: "Universal Media",
   description: "HiFi lossless · SoundCloud · Internet Archive · LibriVox audiobooks · Podcast Index · Taddy · Live Radio",
@@ -47,3 +47,6 @@ export const addon = defineAddon<UniversalConfig>({
     getCatalog:       (cfg, id, extra) => handleSearch(cfg, (extra as { search?: string })?.search ?? "", undefined),
   },
 });
+
+export default addon;
+
