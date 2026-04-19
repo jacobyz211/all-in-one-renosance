@@ -21,8 +21,9 @@ export const addon = defineAddon<UniversalConfig>({
   version: "1.4.0",
   icon: { type:"remote", value:"https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/radio.svg" },
   resources: [
-    { type:"stream", idPrefixes:["com.resonance.universal","hifi_","sc_","ia_","radio_","pi_ep_","taddy_ep_","lvox_ch_"] },
-    { type:"catalog", catalogs:[{id:"search",name:"Search",isDefault:true}] },
+    { type: "stream", idPrefixes: ["com.resonance.universal","hifi_","sc_","ia_","radio_","pi_ep_","taddy_ep_","lvox_ch_"] },
+    { type: "catalog", catalogs: [{ id: "search", name: "Search", isDefault: true }] },
+    { type: "search" },
   ],
   auth: {
     type: "token",
