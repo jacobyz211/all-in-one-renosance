@@ -1,13 +1,25 @@
 import { join } from "node:path";
+import type { BunPlugin } from "bun";
 
 const root = join(import.meta.dir, "..");
+
+const workspaceResolver: BunPlugin = {
+  name: "workspace-resolver",
+  setup(build) {
+    build.onResolve({ filter: /^@resonance-addons\// }, (args) => ({
+      path: join(root, "packages", args.path.replace("@resonance-addons/", ""), "src", "index.ts"),
+    }));
+  },
+};
+
 await Bun.$`mkdir -p ${root}/dist`;
 
 const result = await Bun.build({
-  entrypoints: [`${root}/src/index.ts`],
-  format: "esm",
+  entrypoints: [`${root}/packages/universal-addon/src/index.ts`],
+  format: "iife",
   target: "browser",
   minify: true,
+  plugins: [workspaceResolver],
   define: { "process.env.NODE_ENV": '"production"' },
 });
 
