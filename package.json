@@ -2,6 +2,7 @@
   "name": "resonance-universal-addon",
   "version": "1.0.0",
   "private": true,
+  "workspaces": ["packages/*"],
   "scripts": {
     "build": "bun scripts/build.ts"
   },
