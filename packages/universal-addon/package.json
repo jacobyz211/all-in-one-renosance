@@ -1,0 +1,1 @@
+{"name":"@resonance-addons/universal-addon","module":"src/index.ts","private":true,"type":"module","dependencies":{"@resonance-addons/sdk":"*"}}
