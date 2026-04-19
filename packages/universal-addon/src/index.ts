@@ -156,5 +156,6 @@ export const addon = defineAddon<UniversalConfig>({
     getAlbumDetail:    (cfg, id) => handleAlbum(cfg, id),
     getArtistDetail:   (cfg, id) => handleArtist(cfg, id),
     getPlaylistDetail: (cfg, id) => handlePlaylist(cfg, id),
+    getCatalog:        (cfg, id, extra) => handleSearch(cfg, (extra as { search?: string })?.search ?? "top", undefined),
   },
 });
