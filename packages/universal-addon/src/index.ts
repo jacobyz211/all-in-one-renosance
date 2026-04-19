@@ -154,10 +154,9 @@ export const addon = defineAddon<UniversalConfig>({
   handlers: {
     search:            (cfg, q) => handleSearch(cfg, q),
     resolveStream:     (cfg, id) => handleStream(cfg, id),
+    getCatalog:        (cfg, id, extra) => handleSearch(cfg, extra?.search ?? extra?.q ?? "top", undefined),
     getAlbumDetail:    (cfg, id) => handleAlbum(cfg, id),
     getArtistDetail:   (cfg, id) => handleArtist(cfg, id),
     getPlaylistDetail: (cfg, id) => handlePlaylist(cfg, id),
-    getCatalog:        (cfg, id, extra) => handleSearch(cfg, (extra as { search?: string })?.search ?? "top", undefined),
-    catalog:           (cfg, id, extra) => handleSearch(cfg, (extra as { search?: string })?.search ?? "top", undefined),
   },
 });
